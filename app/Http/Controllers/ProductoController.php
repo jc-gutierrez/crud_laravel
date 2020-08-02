@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Producto;
 use Illuminate\Http\Request;
+//use Illuminate\Support\Facades\DB;
 
 class ProductoController extends Controller
 {
@@ -14,8 +15,9 @@ class ProductoController extends Controller
      */
     public function index()
     {
-        //lista productos
-        return view("producto.listar");
+        $productos = Producto::All();
+        return view("producto.listar", compact("productos"));
+        
     }
 
     /**
@@ -25,8 +27,7 @@ class ProductoController extends Controller
      */
     public function create()
     {
-        //crear productos
-        return view("producto.crear");
+        return view('producto.crear');
     }
 
     /**
@@ -37,7 +38,27 @@ class ProductoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            "nombre" => "required|min:2|max:150",
+            "precio" => "required",
+            "cantidad" => "required",
+        ]);
+
+        $prod = new Producto;
+        $prod->nombre = $request->nombre;
+        $prod->cantidad = $request->cantidad;
+        $prod->precio = $request->precio;
+        $prod->descripcion = $request->descripcion;
+
+        if($file = $request->file("imagen")){
+            $nombre_archivo = $file->getClientOriginalName();
+            $file->move("img/productos", $nombre_archivo);
+        
+        $prod->imagen = "/img/productos/" . $nombre_archivo;
+        }
+        $prod->save();
+
+        return redirect("/producto");
     }
 
     /**
@@ -58,10 +79,10 @@ class ProductoController extends Controller
      * @param  \App\Producto  $producto
      * @return \Illuminate\Http\Response
      */
-    public function edit(Producto $producto)
+    public function edit($id)
     {
-        //edita producto
-        return view("producto.editar");
+        $producto = Producto::find($id);
+        return view('producto.editar', compact('producto'));
     }
 
     /**
@@ -71,9 +92,29 @@ class ProductoController extends Controller
      * @param  \App\Producto  $producto
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Producto $producto)
+    public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            "nombre" => "required|min:2|max:150",
+            "precio" => "required",
+            "cantidad" => "required",
+        ]);
+
+        $prod = Producto::find($id);
+        $prod->nombre = $request->nombre;
+        $prod->cantidad = $request->cantidad;
+        $prod->precio = $request->precio;
+        $prod->descripcion = $request->descripcion;
+
+        if($file = $request->file("imagen")){
+            $nombre_archivo = $file->getClientOriginalName();
+            $file->move("img/productos", $nombre_archivo);
+        
+        $prod->imagen = "/img/productos/" . $nombre_archivo;
+        }
+        $prod->save();
+
+        return redirect("/producto");
     }
 
     /**
@@ -82,8 +123,11 @@ class ProductoController extends Controller
      * @param  \App\Producto  $producto
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Producto $producto)
+    public function destroy($id)
     {
         //
+        $prod = Producto::find($id);
+        $prod->delete();
+        return redirect("/producto")->with("ok", "Producto Eliminado");
     }
 }
